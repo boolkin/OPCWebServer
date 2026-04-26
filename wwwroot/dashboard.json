@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "serverUrl": "http://127.0.0.1:8085/api/tags",
+  "pollInterval": 1000,
+  "blocks": [
+    {
+      "id": "block-1",
+      "title": "Новый блок",
+      "headerColor": null,
+      "bodyColor": null,
+      "x": 185,
+      "y": 120,
+      "w": 320,
+      "h": 200,
+      "z": 1,
+      "widgets": [
+        {
+          "id": "widget-1",
+          "type": "value",
+          "addr": "numeric.random.float",
+          "label": "rand",
+          "units": "",
+          "addr2": "",
+          "units2": "",
+          "sep": "/",
+          "precision": 2
+        },
+        {
+          "id": "widget-2",
+          "type": "value",
+          "addr": "textual.weekday",
+          "label": "text",
+          "units": "",
+          "addr2": "",
+          "units2": "",
+          "sep": "/",
+          "precision": 0
+        }
+      ]
+    }
+  ]
+}

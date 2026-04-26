@@ -1,0 +1,575 @@
+*, *::before, *::after { box-sizing: border-box; }
+
+/* ======================== ТЕМЫ ======================== */
+:root, [data-theme="dark"] {
+    --bg: #080c0a;
+    --surface: #0e1512;
+    --card: #141e19;
+    --panel: #182520;
+    --border: #1f3129;
+    --border-light: #2a4038;
+    --accent: #00e676;
+    --accent-dim: #00a854;
+    --accent-bg: rgba(0,230,118,0.08);
+    --danger: #ff5252;
+    --danger-bg: rgba(255,82,82,0.12);
+    --warn: #ffab40;
+    --info: #40c4ff;
+    --muted: #4d6b5c;
+    --fg: #d4e5da;
+    --fg-dim: #8fa898;
+    --hover-bg: rgba(255,255,255,0.06);
+    --shadow-sm: 0 4px 24px rgba(0,0,0,0.4);
+    --shadow-md: 0 6px 32px rgba(0,0,0,0.6);
+    --shadow-lg: 0 12px 48px rgba(0,230,118,0.12);
+    --shadow-modal: 0 16px 64px rgba(0,0,0,0.6);
+    --shadow-toast: 0 4px 20px rgba(0,0,0,0.5);
+    --backdrop: rgba(0,0,0,0.7);
+    --grid-dot: rgba(0,230,118,0.045);
+    --grid-line: rgba(0,230,118,0.025);
+    --glow-accent: 0 0 6px rgba(0,230,118,0.5);
+    --glow-danger: 0 0 6px rgba(255,82,82,0.5);
+    --toast-success-bg: #0e2a18;
+    --toast-success-border: #00a854;
+    --toast-success-fg: #00e676;
+    --toast-error-bg: #2a0e0e;
+    --toast-error-border: #c62828;
+    --toast-error-fg: #ff5252;
+    --toast-info-bg: #0e1a2a;
+    --toast-info-border: #1565c0;
+    --toast-info-fg: #40c4ff;
+}
+
+[data-theme="light"] {
+    --bg: #eae8e2;
+    --surface: #ddd9d0;
+    --card: #ffffff;
+    --panel: #f2f0ea;
+    --border: #cbc7bc;
+    --border-light: #b8b3a8;
+    --accent: #1a7a42;
+    --accent-dim: #146334;
+    --accent-bg: rgba(26,122,66,0.08);
+    --danger: #c62828;
+    --danger-bg: rgba(198,40,40,0.08);
+    --warn: #e65100;
+    --info: #1565c0;
+    --muted: #8a857a;
+    --fg: #2a2820;
+    --fg-dim: #6a665e;
+    --hover-bg: rgba(0,0,0,0.04);
+    --shadow-sm: 0 4px 24px rgba(0,0,0,0.06);
+    --shadow-md: 0 6px 32px rgba(0,0,0,0.08);
+    --shadow-lg: 0 12px 48px rgba(26,122,66,0.12);
+    --shadow-modal: 0 16px 64px rgba(0,0,0,0.12);
+    --shadow-toast: 0 4px 20px rgba(0,0,0,0.1);
+    --backdrop: rgba(0,0,0,0.25);
+    --grid-dot: rgba(26,122,66,0.1);
+    --grid-line: rgba(26,122,66,0.06);
+    --glow-accent: 0 0 6px rgba(26,122,66,0.35);
+    --glow-danger: 0 0 6px rgba(198,40,40,0.35);
+    --toast-success-bg: #e8f5e9;
+    --toast-success-border: #a5d6a7;
+    --toast-success-fg: #2e7d32;
+    --toast-error-bg: #ffebee;
+    --toast-error-border: #ef9a9a;
+    --toast-error-fg: #c62828;
+    --toast-info-bg: #e3f2fd;
+    --toast-info-border: #90caf9;
+    --toast-info-fg: #1565c0;
+}
+
+/* ======================== БАЗОВЫЕ ======================== */
+body {
+    margin: 0;
+    font-family: 'Manrope', sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    overflow: hidden;
+    height: 100vh;
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
+
+/* ======================== ТУЛБАР ======================== */
+.toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    height: 48px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    z-index: 9000;
+    position: relative;
+}
+.toolbar-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.toolbar-logo-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+}
+.toolbar-logo-text {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--fg-dim);
+}
+.toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.toolbar-sep {
+    width: 1px;
+    height: 20px;
+    background: var(--border);
+    margin: 0 2px;
+}
+.toolbar-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--fg-dim);
+    font-family: 'Manrope', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+}
+.toolbar-btn:hover {
+    background: var(--hover-bg);
+    border-color: var(--border-light);
+    color: var(--fg);
+}
+.toolbar-btn.active {
+    background: var(--accent-bg);
+    border-color: var(--accent-dim);
+    color: var(--accent);
+}
+.toolbar-btn i { font-size: 11px; }
+
+/* Статус подключения */
+.poll-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+}
+.poll-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: all 0.3s;
+}
+.poll-dot.connected {
+    background: var(--accent);
+    box-shadow: var(--glow-accent);
+}
+.poll-dot.error {
+    background: var(--danger);
+    box-shadow: var(--glow-danger);
+}
+
+/* ======================== ОСНОВНАЯ ОБЛАСТЬ ======================== */
+.dashboard-main {
+    overflow: auto;
+    overflow-x: scroll;
+    height: calc(100vh - 48px);
+}
+
+/* ======================== КАНВАС (СЕТКА) ======================== */
+#dashboard-canvas {
+    position: relative;
+    min-width: 4000px;
+    min-height: 3000px;
+    background-color: var(--bg);
+    background-image:
+        radial-gradient(circle, var(--grid-dot) 1px, transparent 1px),
+        linear-gradient(var(--grid-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 5px 5px, 25px 25px, 25px 25px;
+}
+
+/* ======================== БЛОК ======================== */
+.dash-block {
+    position: absolute;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    min-width: 140px;
+    min-height: 80px;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow 0.2s;
+}
+.dash-block:hover { box-shadow: var(--shadow-md); }
+.dash-block.dragging-block {
+    opacity: 0.85;
+    box-shadow: var(--shadow-lg);
+    z-index: 9999 !important;
+}
+
+/* Заголовок блока */
+.block-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px 10px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    border-radius: 6px 6px 0 0;
+    cursor: grab;
+    user-select: none;
+    min-height: 30px;
+    flex-shrink: 0;
+}
+.block-header:active { cursor: grabbing; }
+.block-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--fg-dim);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: calc(100% - 50px);
+}
+.block-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.block-actions button {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+    font-size: 10px;
+    transition: all 0.15s;
+}
+.block-actions button:hover { color: var(--fg); background: var(--hover-bg); }
+.block-actions button.btn-del:hover { color: var(--danger); background: var(--danger-bg); }
+
+/* Контейнер виджетов */
+.widgets-container {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: 4px;
+    padding: 6px;
+    overflow: hidden;
+}
+
+/* Кнопка добавления виджета */
+.add-widget-btn {
+    width: 100px;
+    height: 40px;
+    border: 1px dashed var(--border-light);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+}
+.add-widget-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-bg);
+}
+
+/* ======================== ВИДЖЕТ ======================== */
+.widget {
+    width: 100px;
+    height: 40px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0px 4px;
+    cursor: pointer;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    flex-shrink: 0;
+    transition: border-color 0.15s, background 0.15s;
+    position: relative;
+    gap: 5px;
+}
+.widget:hover {
+    border-color: var(--border-light);
+    background: var(--hover-bg);
+}
+.widget.widget-dragging { opacity: 0.3; }
+
+.widget-label {
+    font-size: 13px;
+    font-weight: 300;
+    color: var(--fg);
+    line-height: 16px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    
+}
+.widget-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+    font-weight: 800;
+    line-height: 14px;
+    color: var(--fg);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    margin-top:0px;
+}
+.widget-value .units {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--fg-dim);
+    margin-left: 2px;
+}
+.widget-value .sep {
+    color: var(--muted);
+    margin: 0 2px;
+}
+
+/* Индикаторы вставки при drag */
+.widget.insert-before::before {
+    content: '';
+    position: absolute;
+    left: -3px; top: 2px; bottom: 2px;
+    width: 2px;
+    background: var(--accent);
+    border-radius: 1px;
+}
+.widget.insert-after::after {
+    content: '';
+    position: absolute;
+    right: -3px; top: 2px; bottom: 2px;
+    width: 2px;
+    background: var(--accent);
+    border-radius: 1px;
+}
+
+/* Ручка ресайза */
+.resize-handle {
+    position: absolute;
+    right: 0; bottom: 0;
+    width: 14px; height: 14px;
+    cursor: nwse-resize;
+    z-index: 2;
+}
+.resize-handle::after {
+    content: '';
+    position: absolute;
+    right: 3px; bottom: 3px;
+    width: 7px; height: 7px;
+    border-right: 2px solid var(--border-light);
+    border-bottom: 2px solid var(--border-light);
+    transition: border-color 0.15s;
+}
+.resize-handle:hover::after { border-color: var(--accent); }
+
+/* ======================== МОДАЛКИ ======================== */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--backdrop);
+    backdrop-filter: blur(4px);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+}
+.modal-overlay.active { opacity: 1; pointer-events: auto; }
+.modal-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    min-width: 380px;
+    max-width: 460px;
+    box-shadow: var(--shadow-modal);
+    transform: translateY(10px) scale(0.97);
+    transition: transform 0.2s;
+}
+.modal-overlay.active .modal-box { transform: translateY(0) scale(1); }
+.modal-title {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 18px;
+    color: var(--fg);
+}
+.modal-field { margin-bottom: 14px; }
+.modal-field label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.modal-field input,
+.modal-field select {
+    width: 100%;
+    padding: 8px 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--fg);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.15s;
+}
+.modal-field input:focus,
+.modal-field select:focus { border-color: var(--accent); }
+.modal-field select { cursor: pointer; }
+.modal-field select option { background: var(--surface); color: var(--fg); }
+.modal-btns { display: flex; gap: 8px; margin-top: 20px; }
+.modal-btns button {
+    flex: 1;
+    padding: 9px 16px;
+    border-radius: 6px;
+    border: none;
+    font-family: 'Manrope', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.btn-primary { background: var(--accent); color: var(--bg); }
+.btn-primary:hover { filter: brightness(1.15); }
+.btn-secondary { background: var(--border); color: var(--fg-dim); }
+.btn-secondary:hover { background: var(--border-light); color: var(--fg); }
+.btn-danger { background: var(--danger-bg); color: var(--danger); }
+.btn-danger:hover { filter: brightness(1.2); }
+
+/* ======================== ТОСТЫ ======================== */
+.toast-container {
+    position: fixed;
+    top: 60px; right: 16px;
+    z-index: 20000;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.toast {
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    box-shadow: var(--shadow-toast);
+    animation: toastIn 0.3s ease-out, toastOut 0.3s ease-in forwards;
+    animation-delay: 0s, 2.5s;
+    max-width: 320px;
+}
+.toast-success { background: var(--toast-success-bg); border: 1px solid var(--toast-success-border); color: var(--toast-success-fg); }
+.toast-error { background: var(--toast-error-bg); border: 1px solid var(--toast-error-border); color: var(--toast-error-fg); }
+.toast-info { background: var(--toast-info-bg); border: 1px solid var(--toast-info-border); color: var(--toast-info-fg); }
+@keyframes toastIn { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateX(30px); } }
+
+/* ======================== ПАНЕЛЬ ДАННЫХ ======================== */
+.data-panel {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    max-height: 180px;
+    overflow: auto;
+    z-index: 5000;
+    transition: transform 0.3s;
+    transform: translateY(calc(100% - 32px));
+}
+.data-panel.open { transform: translateY(0); }
+.data-panel-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 16px;
+    cursor: pointer;
+    user-select: none;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    z-index: 1;
+}
+.data-panel-toggle:hover { color: var(--fg-dim); }
+.data-panel-content {
+    padding: 8px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--fg-dim);
+    white-space: pre-wrap;
+    word-break: break-all;
+    line-height: 1.6;
+}
+
+#import-input { display: none; }
+
+/* ======================== ИНДИКАТОР BOOL ======================== */
+.bool-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: background 0.3s, box-shadow 0.3s;
+}
+.bool-on {
+    background: var(--accent);
+    box-shadow: 0 0 6px var(--glow-accent);
+}
+.bool-off {
+    background: var(--danger);
+    box-shadow: 0 0 6px var(--glow-danger);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}

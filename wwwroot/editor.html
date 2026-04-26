@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OPC Dashboard — Редактор</title>
+<script src="libs/tw.js"></script>
+<link href="libs/css2.css" rel="stylesheet">
+<link rel="stylesheet" href="libs/all.min.css">
+<link rel="stylesheet" href="libs/styles.css">
+<script>
+tailwind.config = { theme: { extend: { fontFamily: {
+    mono: ['"JetBrains Mono"', 'monospace'],
+    sans: ['"Manrope"', 'sans-serif'],
+}}}};
+</script>
+</head>
+<body class="font-sans">
+
+<!-- Тулбар -->
+<header class="toolbar">
+    <div class="flex items-center gap-3">
+        <div class="toolbar-logo">
+            <div class="toolbar-logo-dot"></div>
+            <span class="toolbar-logo-text">OPC Dashboard</span>
+        </div>
+        <div class="poll-status" id="poll-status">
+            <div class="poll-dot" id="poll-dot"></div>
+            <span id="poll-label">не подключено</span>
+        </div>
+    </div>
+    <div class="toolbar-actions">
+        <button class="toolbar-btn" onclick="addBlock()" title="Добавить блок">
+            <i class="fas fa-plus"></i> Блок
+        </button>
+        <div class="toolbar-sep"></div>
+        <button class="toolbar-btn" onclick="exportDashboard()" title="Экспорт JSON">
+            <i class="fas fa-download"></i> Экспорт
+        </button>
+        <button class="toolbar-btn" onclick="deployDashboard()" title="Деплой на сервер">
+            <i class="fas fa-cloud-arrow-up"></i> Деплой
+        </button>
+        <button class="toolbar-btn" onclick="document.getElementById('import-input').click()" title="Импорт JSON">
+            <i class="fas fa-upload"></i> Импорт
+        </button>
+        <div class="toolbar-sep"></div>
+        <button class="toolbar-btn" id="url-btn" onclick="openUrlModal()" title="Источник данных">
+            <i class="fas fa-plug"></i> Источник
+        </button>
+        <button class="toolbar-btn" onclick="openDataModal()" title="Панель данных">
+            <i class="fas fa-database"></i> Данные
+        </button>
+        <div class="toolbar-sep"></div>
+        <button class="toolbar-btn" onclick="toggleTheme()" title="Переключить тему">
+            <i class="fas fa-sun" id="theme-icon"></i>
+        </button>
+        <div class="toolbar-sep"></div>
+        <a href="index.html" class="toolbar-btn" title="Открыть просмотр" style="text-decoration:none;">
+            <i class="fas fa-eye"></i> Просмотр
+        </a>
+    </div>
+    <input type="file" id="import-input" accept=".json" onchange="handleImport(event)">
+</header>
+
+<!-- Дашборд -->
+<main class="dashboard-main">
+    <div id="dashboard-canvas"></div>
+</main>
+
+<!-- Модалка: Блок -->
+<div class="modal-overlay" id="block-modal">
+    <div class="modal-box">
+        <div class="modal-title">Настройка блока</div>
+        <div class="modal-field">
+            <label>Заголовок</label>
+            <input type="text" id="bm-title" placeholder="Введите заголовок">
+        </div>
+                <div class="modal-field" style="display:flex; gap:12px;">
+            <div style="flex:1;">
+                <label>Цвет заголовка</label>
+                <div style="display:flex; gap:4px; align-items:center;">
+                    <input type="color" id="bm-header-color" value="#0e1512" data-active="false" style="width:40px; height:36px; padding:2px; cursor:pointer; border-radius:4px; border:1px solid var(--border); opacity:0.5;" onchange="this.dataset.active='true'; this.style.opacity='1';">
+                    <button type="button" class="btn-secondary" onclick="resetBlockColor('header')" style="padding:8px; font-size:11px; flex:1;">Сброс</button>
+                </div>
+            </div>
+            <div style="flex:1;">
+                <label>Цвет фона блока</label>
+                <div style="display:flex; gap:4px; align-items:center;">
+                    <input type="color" id="bm-body-color" value="#141e19" data-active="false" style="width:40px; height:36px; padding:2px; cursor:pointer; border-radius:4px; border:1px solid var(--border); opacity:0.5;" onchange="this.dataset.active='true'; this.style.opacity='1';">
+                    <button type="button" class="btn-secondary" onclick="resetBlockColor('body')" style="padding:8px; font-size:11px; flex:1;">Сброс</button>
+                </div>
+            </div>
+        </div>
+        <div class="modal-btns">
+            <button class="btn-danger" onclick="deleteBlockFromModal()">Удалить</button>
+            <button class="btn-secondary" onclick="copyBlockFromModal()">Копировать</button>
+            <div class="flex-1"></div>
+            <button class="btn-secondary" onclick="closeModal('block-modal')">Отмена</button>
+            <button class="btn-primary" onclick="saveBlockModal()">Сохранить</button>
+        </div>
+    </div>
+</div>
+
+<!-- Модалка: Виджет -->
+<div class="modal-overlay" id="widget-modal">
+    <div class="modal-box">
+        <div class="modal-title">Настройка виджета</div>
+        <div class="modal-field">
+            <label>Тип</label>
+            <select id="wm-type" onchange="onWidgetTypeChange()">
+                <option value="value">Значение</option>
+                <option value="bool">Логический</option>
+                <option value="text">Текст</option>
+                <option value="dual">Сдвоенное значение</option>
+            </select>
+        </div>
+        <div class="modal-field">
+            <label>Название</label>
+            <input type="text" id="wm-label" placeholder="Отображаемое название">
+        </div>
+        <div class="modal-field" id="wm-addr-field">
+            <label>Адрес OPC (addr)</label>
+            <input type="text" id="wm-addr" placeholder="numeric.sin.int8" list="addr-datalist" autocomplete="off">
+        </div>
+        <div class="modal-field" id="wm-addr2-field" style="display:none;">
+            <label>Адрес OPC 2 (addr)</label>
+            <input type="text" id="wm-addr2" placeholder="numeric.random.float" list="addr-datalist" autocomplete="off">
+        </div>
+        <div class="modal-field" id="wm-units-field">
+            <label>Единицы измерения</label>
+            <input type="text" id="wm-units" placeholder="°C, бар, мм...">
+        </div>
+        <div class="modal-field" id="wm-precision-field">
+            <label>Округление (знаков после запятой)</label>
+            <input type="number" id="wm-precision" value="0" min="0" max="6" step="1">
+        </div>
+        <div class="modal-field" id="wm-units2-field" style="display:none;">
+            <label>Единицы измерения 2</label>
+            <input type="text" id="wm-units2" placeholder="мм...">
+        </div>
+        <div class="modal-field" id="wm-sep-field" style="display:none;">
+            <label>Разделитель</label>
+            <input type="text" id="wm-sep" value="/" placeholder="/">
+        </div>
+        <div class="modal-btns">
+            <button class="btn-danger" onclick="deleteWidgetFromModal()">Удалить</button>
+            <button class="btn-secondary" onclick="copyWidgetFromModal()">Копировать</button>
+            <div class="flex-1"></div>
+            <button class="btn-secondary" onclick="closeModal('widget-modal')">Отмена</button>
+            <button class="btn-primary" onclick="saveWidgetModal()">Сохранить</button>
+        </div>
+    </div>
+</div>
+
+<!-- Модалка: Источник -->
+<div class="modal-overlay" id="url-modal">
+    <div class="modal-box">
+        <div class="modal-title">Настройка источника данных</div>
+        <div class="modal-field">
+            <label>URL API (GET, ответ — JSON массив)</label>
+            <input type="text" id="um-url" placeholder="http://192.168.1.10:8080/opc/tags">
+        </div>
+        <div class="modal-field">
+            <label>Интервал опроса (мс)</label>
+            <input type="number" id="um-interval" value="1000" min="200" step="100">
+        </div>
+        <div class="modal-btns">
+            <button class="btn-danger" onclick="stopUrlPolling(); closeModal('url-modal')">Отключить</button>
+            <div class="flex-1"></div>
+            <button class="btn-secondary" onclick="closeModal('url-modal')">Отмена</button>
+            <button class="btn-primary" onclick="startUrlPolling()">Подключить</button>
+        </div>
+    </div>
+</div>
+
+<datalist id="addr-datalist"></datalist>
+<div class="toast-container" id="toast-container"></div>
+<!-- Модалка: Данные OPC -->
+<div class="modal-overlay" id="data-modal">
+    <div class="modal-box" style="max-width: 600px; max-height: 80vh; display: flex; flex-direction: column;">
+        <div class="modal-title">Входящие данные OPC</div>
+        <div id="data-modal-content" class="data-panel-content" style="flex: 1; overflow-y: auto; background: var(--surface); border-radius: 4px; padding: 12px;">Нет данных</div>
+        <div class="modal-btns">
+            <div class="flex-1"></div>
+            <button class="btn-secondary" onclick="closeModal('data-modal')">Закрыть</button>
+        </div>
+    </div>
+</div>
+
+<script src="libs/common.js"></script>
+<script src="libs/editor.js"></script>
+</body>
+</html>
