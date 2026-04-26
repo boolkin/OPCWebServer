@@ -9,6 +9,7 @@ namespace OPCWebServer
         private readonly UdpClient _udpClient;
         private readonly IPEndPoint _remoteEndPoint;
         private readonly bool _enabled;
+        private bool _disposed = false;
 
         public UdpService(UdpSettings settings)
         {
@@ -24,12 +25,12 @@ namespace OPCWebServer
 
         public void Send(byte[] data)
         {
-            if (!_enabled || data == null || data.Length == 0) return;
+            if (_disposed || !_enabled || data == null || data.Length == 0) return;
 
             try
             {
                 // Отправка данных асинхронно, чтобы не тормозить цикл опроса OPC
-                _udpClient.SendAsync(data, data.Length, _remoteEndPoint);
+                _udpClient.BeginSend(data, data.Length, _remoteEndPoint, null, null);
             }
             catch (Exception)
             {
@@ -39,8 +40,16 @@ namespace OPCWebServer
 
         public void Dispose()
         {
-            _udpClient?.Close();
-            _udpClient?.Dispose();
+            if (!_disposed)
+            {
+                _disposed = true;
+                try
+                {
+                    _udpClient?.Close();
+                    _udpClient?.Dispose();
+                }
+                catch { }
+            }
         }
     }
 }

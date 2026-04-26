@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace OPCWebServer
 {
-    public class WebService
+    public class WebService : IDisposable
     {
         private HttpListener _listener;
         private readonly WebSettings _settings;
@@ -42,7 +42,11 @@ namespace OPCWebServer
                     var context = await _listener.GetContextAsync();
                     ProcessRequest(context);
                 }
-                catch (Exception ex) { /* Логирование */ }
+                catch (Exception ex) 
+                { 
+                    // Логирование ошибки
+                    if (!_isRunning) break;
+                }
             }
         }
 
@@ -128,8 +132,17 @@ namespace OPCWebServer
         public void Stop()
         {
             _isRunning = false;
-            _listener?.Stop();
-            _listener?.Close();
+            if (_listener != null)
+            {
+                _listener.Stop();
+                _listener.Close();
+                _listener = null;
+            }
+        }
+
+        public void Dispose()
+        {
+            Stop();
         }
     }
 }

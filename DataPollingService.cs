@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Timers;
 using System.Text.Json;
+using System.Threading;
 
 namespace OPCWebServer
 {
@@ -12,11 +13,28 @@ namespace OPCWebServer
         private readonly List<TagConfig> _tags;
         private readonly int _interval;
         private System.Timers.Timer _timer;
+        private readonly object _lock = new object();
+        private byte[] _lastBinaryData = Array.Empty<byte>();
+        private string _lastJsonData = "[]";
 
-        public byte[] LastBinaryData { get; private set; } = Array.Empty<byte>();
-        public string LastJsonData { get; private set; } = "[]";
+        public byte[] LastBinaryData 
+        { 
+            get 
+            { 
+                lock (_lock) return _lastBinaryData.ToArray(); 
+            } 
+        }
+        
+        public string LastJsonData 
+        { 
+            get 
+            { 
+                lock (_lock) return _lastJsonData ?? "[]"; 
+            } 
+        }
 
         public event Action DataUpdated;
+        public event Action<string> LogMessage;
 
         public DataPollingService(OpcService opc, List<TagConfig> tags, int intervalMs)
         {
@@ -35,6 +53,8 @@ namespace OPCWebServer
             _timer.Elapsed += ProcessTick;
             _timer.AutoReset = true;
             _timer.Enabled = true;
+            
+            LogMessage?.Invoke($"{DateTime.Now:HH:mm:ss}: Опрос тегов запущен (интервал {_interval}мс)");
         }
 
         public void Stop()
@@ -44,6 +64,7 @@ namespace OPCWebServer
                 _timer.Stop();
                 _timer.Dispose();
                 _timer = null;
+                LogMessage?.Invoke($"{DateTime.Now:HH:mm:ss}: Опрос тегов остановлен");
             }
         }
 
@@ -83,14 +104,20 @@ namespace OPCWebServer
                     }
                 }
 
-                LastJsonData = JsonSerializer.Serialize(jsonList);
-                LastBinaryData = binaryList.SelectMany(BitConverter.GetBytes).ToArray();
+                string jsonData = JsonSerializer.Serialize(jsonList);
+                byte[] binaryData = binaryList.SelectMany(BitConverter.GetBytes).ToArray();
+
+                lock (_lock)
+                {
+                    _lastJsonData = jsonData;
+                    _lastBinaryData = binaryData;
+                }
 
                 DataUpdated?.Invoke();
             }
             catch (Exception ex)
             {
-                // Рекомендуется добавить: Console.WriteLine($"Error: {ex.Message}");
+                LogMessage?.Invoke($"{DateTime.Now:HH:mm:ss}: Ошибка опроса: {ex.Message}");
             }
         }
 

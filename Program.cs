@@ -282,6 +282,15 @@ namespace OPCWebServer
                     // 1. Инициализируем опрос
                     _polling = new DataPollingService(opcService, config.Tags, config.OpcSettings.RefreshRateMs);
 
+                    // Подписываемся на логирование
+                    _polling.LogMessage += (msg) =>
+                    {
+                        if (txtLog.InvokeRequired)
+                            txtLog.Invoke(new Action(() => txtLog.AppendText(msg + Environment.NewLine)));
+                        else
+                            txtLog.AppendText(msg + Environment.NewLine);
+                    };
+
                     // 2. Инициализируем и запускаем Web-сервер (передаем настройки и ссылку на опрос)
                     _webService = new WebService(config.WebSettings, _polling);
                     _webService.Start();
