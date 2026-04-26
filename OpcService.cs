@@ -11,6 +11,10 @@ namespace OPCWebServer
         private Opc.Da.Server _server;
         private readonly OpcCom.Factory _factory = new OpcCom.Factory();
         private Opc.Da.Subscription _group;
+        private bool _disposed = false;
+        private bool _isConnected = false;
+
+        public bool IsConnected => _isConnected && _server != null && _server.IsConnected;
 
         public List<string> GetLocalServers()
         {
@@ -49,6 +53,7 @@ namespace OPCWebServer
 
             if (_server == null) throw new Exception("Сервер не найден");
             _server.Connect();
+            _isConnected = true;
         }
 
         public List<BrowseElement> Browse(ItemIdentifier parentId = null)
@@ -73,74 +78,94 @@ namespace OPCWebServer
             return _server.Read(items);
         }
 
- public void PrepareSubscription(string[] addresses, int refreshRate)
-{
-    if (_server == null || !_server.IsConnected) 
-        throw new Exception("OPC сервер не подключен");
-
-    // 1. Очистка старых подписок
-    try
-    {
-        if (_group != null)
+        public void PrepareSubscription(string[] addresses, int refreshRate)
         {
-            _server.CancelSubscription(_group);
-            _group.Dispose();
-            _group = null;
+            if (_server == null || !_server.IsConnected) 
+                throw new Exception("OPC сервер не подключен");
+
+            // 1. Очистка старых подписок
+            try
+            {
+                if (_group != null)
+                {
+                    _server.CancelSubscription(_group);
+                    _group.Dispose();
+                    _group = null;
+                }
+                
+                // На всякий случай удаляем вообще все подписки, если сервер их "забыл"
+                foreach (Opc.Da.Subscription sub in _server.Subscriptions)
+                {
+                    _server.CancelSubscription(sub);
+                }
+            }
+            catch { /* Игнорируем ошибки при очистке */ }
+
+            // 2. Создание новой группы
+            var state = new Opc.Da.SubscriptionState {
+                Name = "DataPollingGroup_" + DateTime.Now.Ticks, // Уникальное имя
+                UpdateRate = refreshRate,
+                Active = true
+            };
+
+            _group = (Opc.Da.Subscription)_server.CreateSubscription(state);
+
+            var items = addresses.Select(addr => new Opc.Da.Item { 
+                ItemName = addr, 
+                Active = true 
+            }).ToArray();
+
+            _group.AddItems(items);
         }
-        
-        // На всякий случай удаляем вообще все подписки, если сервер их "забыл"
-        foreach (Opc.Da.Subscription sub in _server.Subscriptions)
+
+
+        public Opc.Da.ItemValueResult[] ReadActiveTags()
         {
-            _server.CancelSubscription(sub);
+            try 
+            {
+                if (_server == null || !_server.IsConnected || _group == null) 
+                    return Array.Empty<Opc.Da.ItemValueResult>();
+
+                return _group.Read(_group.Items);
+            }
+            catch (Exception ex)
+            {
+                // Если подписка "протухла", возвращаем пустой массив
+                // Это предотвратит вылет DataPollingService
+                return Array.Empty<Opc.Da.ItemValueResult>();
+            }
         }
-    }
-    catch { /* Игнорируем ошибки при очистке */ }
-
-    // 2. Создание новой группы
-    var state = new Opc.Da.SubscriptionState {
-        Name = "DataPollingGroup_" + DateTime.Now.Ticks, // Уникальное имя
-        UpdateRate = refreshRate,
-        Active = true
-    };
-
-    _group = (Opc.Da.Subscription)_server.CreateSubscription(state);
-
-    var items = addresses.Select(addr => new Opc.Da.Item { 
-        ItemName = addr, 
-        Active = true 
-    }).ToArray();
-
-    _group.AddItems(items);
-}
-
-
-public Opc.Da.ItemValueResult[] ReadActiveTags()
-{
-    try 
-    {
-        if (_server == null || !_server.IsConnected || _group == null) 
-            return Array.Empty<Opc.Da.ItemValueResult>();
-
-        return _group.Read(_group.Items);
-    }
-    catch (Exception ex)
-    {
-        // Если подписка "протухла", возвращаем пустой массив
-        // Это предотвратит вылет DataPollingService
-        return Array.Empty<Opc.Da.ItemValueResult>();
-    }
-}
 
 
         public void Disconnect()
         {
             if (_server != null && _server.IsConnected)
             {
-                _server.Disconnect();
-                _server = null;
+                try
+                {
+                    if (_group != null)
+                    {
+                        _server.CancelSubscription(_group);
+                        _group.Dispose();
+                        _group = null;
+                    }
+                    _server.Disconnect();
+                }
+                finally
+                {
+                    _server = null;
+                    _isConnected = false;
+                }
             }
         }
 
-        public void Dispose() => Disconnect();
+        public void Dispose()
+        {
+            if (!_disposed)
+            {
+                _disposed = true;
+                Disconnect();
+            }
+        }
     }
 }
