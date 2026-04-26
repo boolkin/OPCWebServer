@@ -1,0 +1,64 @@
+{
+  "OpcSettings": {
+    "AppName": "OPC Server",
+    "ServerId": "Graybox.Simulator",
+    "RefreshRateMs": 2000
+  },
+  "WebSettings": {
+    "Enabled": true,
+    "Port": 8085,
+    "StaticFolder": "wwwroot"
+  },
+  "UdpSettings": {
+    "Enabled": true,
+    "RemoteIp": "127.0.0.1",
+    "RemotePort": 3310
+  },
+  "Tags": [
+    {
+      "Id": 1,
+      "Address": "storage.bool.reg01",
+      "DataType": "bool",
+      "Multiplier": 1,
+      "Offset": 0,
+      "Invert": false,
+      "UdpSend": false
+    },
+    {
+      "Id": 2,
+      "Address": "time.current",
+      "DataType": "text",
+      "Multiplier": 1,
+      "Offset": 0,
+      "Invert": false,
+      "UdpSend": false
+    },
+    {
+      "Id": 3,
+      "Address": "textual.weekday",
+      "DataType": "text",
+      "Multiplier": 1,
+      "Offset": 0,
+      "Invert": false,
+      "UdpSend": false
+    },
+    {
+      "Id": 4,
+      "Address": "numeric.random.float",
+      "DataType": "float",
+      "Multiplier": 1,
+      "Offset": 0,
+      "Invert": false,
+      "UdpSend": false
+    },
+    {
+      "Id": 5,
+      "Address": "numeric.sin.int8",
+      "DataType": "float",
+      "Multiplier": 1,
+      "Offset": 0,
+      "Invert": false,
+      "UdpSend": false
+    }
+  ]
+}
