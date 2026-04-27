@@ -1,61 +1,36 @@
 ```
-# Compiled and build artifacts
-*.exe
-*.dll
-*.obj
-*.pdb
-*.ilk
-*.exp
-*.lib
-*.so
-*.dylib
-*.class
-*.jar
-*.war
-*.ear
-obj/
+# Build artifacts
 bin/
-Debug/
-Release/
-x64/
-x86/
-build/
-dist/
+obj/
+*.dll
+*.exe
+*.pdb
+*.config
 
 # Dependencies
+packages/
 node_modules/
-packages/
-vendor/
 .nuget/
-packages/
 
 # Logs and temp files
 *.log
 *.tmp
-*.temp
-*.cache
+*.swp
 
 # Environment
 .env
 .env.local
-.env.*
+*.env.*
 
 # Editors
-.vs/
-.vshost.*
 .vscode/
 .idea/
-*.user
-*.userosscache
-*.suo
-*.csproj.user
+*.userprefs
 
 # OS generated files
 .DS_Store
 Thumbs.db
-desktop.ini
 
 # Testing
 TestResults/
-coverage/
 ```

@@ -18,16 +18,16 @@ namespace OPCWebServer
         private bool isLoggingEnabled = false;
 
         private TextBox txtOpcServer = null, txtUdpIp = null, txtTagFilter = null, txtAppName = null;
-        private TextBox txtLog = null;
-
-        private NumericUpDown numRefresh = null, numPort = null, numUdpPort = null;
-        private CheckBox cbWebEnabled = null, cbUdpEnabled = null;
+        private TextBox txtLog = null, txtDbPath = null;
+        private NumericUpDown numRefresh = null, numPort = null, numUdpPort = null, numDbRetention = null;
+        private CheckBox cbWebEnabled = null, cbUdpEnabled = null, cbDbEnabled = null;
         private ListBox lbAvailableTags = null;
         private Button btnStart = null, btnStop = null;
 
         private DataPollingService _polling;
         private UdpService _udpService;
         private WebService _webService;
+        private DbService _dbService;
         private Button btnStartWebOnly = null;
 
         public MainForm()
@@ -104,6 +104,12 @@ namespace OPCWebServer
             grid.Controls.Add(new Label { Text = "UDP Port:" }, 0, 5); numUdpPort = new NumericUpDown { Maximum = 65535 }; grid.Controls.Add(numUdpPort, 1, 5);
             cbWebEnabled = new CheckBox { Text = "Web Server Enabled", AutoSize = true }; grid.Controls.Add(cbWebEnabled, 1, 6);
             cbUdpEnabled = new CheckBox { Text = "UDP Send Enabled", AutoSize = true }; grid.Controls.Add(cbUdpEnabled, 1, 7);
+            
+            // Database settings
+            grid.Controls.Add(new Label { Text = "DB Path:" }, 0, 8); txtDbPath = new TextBox { Width = 200 }; grid.Controls.Add(txtDbPath, 1, 8);
+            grid.Controls.Add(new Label { Text = "DB Retention (days):" }, 0, 9); numDbRetention = new NumericUpDown { Minimum = 1, Maximum = 365, Value = 30 }; grid.Controls.Add(numDbRetention, 1, 9);
+            cbDbEnabled = new CheckBox { Text = "Archive to DB Enabled", AutoSize = true }; grid.Controls.Add(cbDbEnabled, 1, 10);
+            
             tabSettings.Controls.Add(grid);
 
             // --- ВКЛАДКА ТЕГИ ---
@@ -136,9 +142,25 @@ namespace OPCWebServer
                 Name = "DataType"
             };
 
+            var udpColumn = new DataGridViewCheckBoxColumn
+            {
+                DataPropertyName = "UdpSend",
+                HeaderText = "UDP",
+                Name = "UdpSend"
+            };
+
+            var archiveColumn = new DataGridViewCheckBoxColumn
+            {
+                DataPropertyName = "Archive",
+                HeaderText = "Архив",
+                Name = "Archive"
+            };
+
             tagBindingSource.DataSource = config.Tags;
             dgv.DataSource = tagBindingSource;
             dgv.Columns.Add(typeColumn);
+            dgv.Columns.Add(udpColumn);
+            dgv.Columns.Add(archiveColumn);
 
             var menu = new ContextMenuStrip();
             var deleteItem = new ToolStripMenuItem("Удалить строку");
@@ -279,6 +301,19 @@ namespace OPCWebServer
                     opcService.Connect(config.OpcSettings.ServerId);
                     _udpService = new UdpService(config.UdpSettings);
 
+                    // Initialize DB service if enabled
+                    if (config.DatabaseSettings.Enabled)
+                    {
+                        _dbService = new DbService(config.DatabaseSettings.DbPath, config.DatabaseSettings.RetentionDays);
+                        _dbService.LogMessage += (msg) =>
+                        {
+                            if (txtLog.InvokeRequired)
+                                txtLog.Invoke(new Action(() => txtLog.AppendText($"[DB] {msg}" + Environment.NewLine)));
+                            else
+                                txtLog.AppendText($"[DB] {msg}" + Environment.NewLine);
+                        };
+                    }
+
                     // 1. Инициализируем опрос
                     _polling = new DataPollingService(opcService, config.Tags, config.OpcSettings.RefreshRateMs);
 
@@ -292,7 +327,7 @@ namespace OPCWebServer
                     };
 
                     // 2. Инициализируем и запускаем Web-сервер (передаем настройки и ссылку на опрос)
-                    _webService = new WebService(config.WebSettings, _polling);
+                    _webService = new WebService(config.WebSettings, _polling, _dbService);
                     _webService.Start();
 
                     _polling.DataUpdated += () =>
@@ -300,10 +335,24 @@ namespace OPCWebServer
                         if (txtLog.InvokeRequired)
                         {
                             _udpService.Send(_polling.LastBinaryData);
+                            
+                            // Write to DB if enabled
+                            if (config.DatabaseSettings.Enabled && _dbService != null)
+                            {
+                                WriteToDatabase();
+                            }
+                            
                             txtLog.Invoke(new Action(() => UpdateLogView()));
                         }
                         else
                         {
+                            _udpService.Send(_polling.LastBinaryData);
+                            
+                            if (config.DatabaseSettings.Enabled && _dbService != null)
+                            {
+                                WriteToDatabase();
+                            }
+                            
                             UpdateLogView();
                         }
                     };
@@ -323,11 +372,13 @@ namespace OPCWebServer
                 _webService?.Stop();
                 _polling?.Stop();
                 _udpService?.Dispose();
+                _dbService?.Dispose();
                 opcService.Disconnect();
 
                 _webService = null;
                 _polling = null;
                 _udpService = null;
+                _dbService = null;
             }
             txtLog.AppendText($"{DateTime.Now}: Статус OPC, Web, UDP Запущен? - {isRunning}" + Environment.NewLine);
             trayService.UpdateStatus(isRunning);
@@ -352,6 +403,24 @@ namespace OPCWebServer
                             $"UDP Пакет: {_polling.LastBinaryData.Length} байт" + Environment.NewLine +
                             "--------------------------------" + Environment.NewLine +
                             _polling.LastJsonData;
+            }
+        }
+
+        private void WriteToDatabase()
+        {
+            if (_polling == null || _dbService == null) return;
+
+            // Get current values from polling service and write to DB for tags with Archive=true
+            for (int i = 0; i < config.Tags.Count; i++)
+            {
+                if (config.Tags[i].Archive)
+                {
+                    var value = _polling.GetCurrentValue(i);
+                    if (value != null)
+                    {
+                        _dbService.EnqueueRecord(i, value);
+                    }
+                }
             }
         }
         private void ShowWindow() { this.Show(); this.WindowState = FormWindowState.Normal; this.Activate(); }
@@ -380,6 +449,9 @@ namespace OPCWebServer
             config.UdpSettings.RemoteIp = txtUdpIp.Text;
             config.UdpSettings.RemotePort = (int)numUdpPort.Value;
             config.UdpSettings.Enabled = cbUdpEnabled.Checked;
+            config.DatabaseSettings.DbPath = txtDbPath.Text;
+            config.DatabaseSettings.RetentionDays = (int)numDbRetention.Value;
+            config.DatabaseSettings.Enabled = cbDbEnabled.Checked;
         }
 
         private void UpdateUiFromConfig()
@@ -393,6 +465,9 @@ namespace OPCWebServer
             txtUdpIp.Text = config.UdpSettings.RemoteIp;
             numUdpPort.Value = config.UdpSettings.RemotePort;
             cbUdpEnabled.Checked = config.UdpSettings.Enabled;
+            txtDbPath.Text = config.DatabaseSettings.DbPath;
+            numDbRetention.Value = config.DatabaseSettings.RetentionDays;
+            cbDbEnabled.Checked = config.DatabaseSettings.Enabled;
             // 2. Привязываем новый список тегов к источнику данных таблицы
             tagBindingSource.DataSource = config.Tags;
             // 3. ОБНОВЛЯЕМ ссылки внутри TagManager, чтобы он работал с НОВЫМ списком
@@ -403,7 +478,7 @@ namespace OPCWebServer
 
         protected override void Dispose(bool disposing)
         {
-            if (disposing) { trayService?.Dispose(); opcService?.Dispose(); }
+            if (disposing) { trayService?.Dispose(); opcService?.Dispose(); _dbService?.Dispose(); }
             base.Dispose(disposing);
         }
     }
