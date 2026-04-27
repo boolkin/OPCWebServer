@@ -192,45 +192,5 @@ namespace OPCWebServer
                 return 0f; 
             }
         }
-
-        public object GetCurrentValue(int tagIndex)
-        {
-            lock (_lock)
-            {
-                if (string.IsNullOrEmpty(_lastJsonData) || _lastJsonData == "[]")
-                    return null;
-
-                try
-                {
-                    var jsonList = JsonSerializer.Deserialize<List<JsonElement>>(_lastJsonData);
-                    if (jsonList == null || tagIndex >= jsonList.Count)
-                        return null;
-
-                    var item = jsonList[tagIndex];
-                    if (item.TryGetProperty("v", out var valueProp))
-                    {
-                        switch (valueProp.ValueKind)
-                        {
-                            case JsonValueKind.Number:
-                                return valueProp.GetDouble();
-                            case JsonValueKind.True:
-                                return true;
-                            case JsonValueKind.False:
-                                return false;
-                            case JsonValueKind.String:
-                                return valueProp.GetString();
-                            default:
-                                return null;
-                        }
-                    }
-                }
-                catch
-                {
-                    // Ignore parsing errors
-                }
-                
-                return null;
-            }
-        }
     }
 }

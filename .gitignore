@@ -1,13 +1,17 @@
-```
-# Build artifacts
-bin/
-obj/
-*.dll
+# Compiled and build artifacts
+*.o
+*.obj
 *.exe
-*.pdb
-*.config
+*.dll
+*.so
+*.a
+*.out
 
 # Dependencies
+bin/
+obj/
+Debug/
+Release/
 packages/
 node_modules/
 .nuget/
@@ -31,6 +35,48 @@ node_modules/
 .DS_Store
 Thumbs.db
 
-# Testing
-TestResults/
-```
+# Build outputs
+build/
+dist/
+target/
+out/
+_output/
+
+# Test and coverage
+coverage/
+htmlcov/
+.coverage
+*.coverage
+
+# Cache directories
+__pycache__/
+.cache/
+.mypy_cache/
+.pytest_cache/
+.gradle/
+.julia/
+zig-cache/
+
+# Archives
+*.zip
+*.gz
+*.tar
+*.tgz
+*.bz2
+*.xz
+*.7z
+*.rar
+*.zst
+*.lz4
+*.lzh
+*.cab
+*.arj
+*.rpm
+*.deb
+*.Z
+*.lz
+*.lzo
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.zst
