@@ -16,6 +16,12 @@ namespace OPCWebServer
         private readonly object _lock = new object();
         private byte[] _lastBinaryData = Array.Empty<byte>();
         private string _lastJsonData = "[]";
+        
+        // Настройки для БД и UDP
+        private bool _udpEnabled;
+        private UdpService _udpService;
+        private DbService _dbService;
+        private DatabaseSettings _dbSettings;
 
         public byte[] LastBinaryData 
         { 
@@ -35,6 +41,14 @@ namespace OPCWebServer
 
         public event Action DataUpdated;
         public event Action<string> LogMessage;
+
+        public void SetServices(UdpService udp, DbService db, DatabaseSettings dbSettings, bool udpEnabled)
+        {
+            _udpService = udp;
+            _dbService = db;
+            _dbSettings = dbSettings;
+            _udpEnabled = udpEnabled;
+        }
 
         public DataPollingService(OpcService opc, List<TagConfig> tags, int intervalMs)
         {
@@ -77,6 +91,7 @@ namespace OPCWebServer
 
                 var jsonList = new List<object>();
                 var binaryList = new List<float>();
+                var tagsForArchive = new List<(int Index, float Value)>();
 
                 for (int i = 0; i < _tags.Count; i++)
                 {
@@ -89,7 +104,7 @@ namespace OPCWebServer
                     // В JSON улетит либо число, либо bool, либо строка
                     jsonList.Add(new { id = tag.Id, addr = tag.Address, v = processed });
 
-                    // В UDP (Binary) отправляем только если это число (float)
+                    // Логика UDP - только числа и bool (как float)
                     if (tag.UdpSend)
                     {
                         if (processed is float f)
@@ -102,6 +117,20 @@ namespace OPCWebServer
                         }
                         // Текстовые данные игнорируем для бинарного UDP пакета
                     }
+
+                    // Логика Архива (БД) - аналогично UDP, только числа
+                    if (_dbSettings?.Enabled == true && tag.Archive)
+                    {
+                        if (processed is float valFloat)
+                        {
+                            tagsForArchive.Add((i, valFloat));
+                        }
+                        else if (processed is bool b)
+                        {
+                            tagsForArchive.Add((i, b ? 1f : 0f));
+                        }
+                        // Строки в архив не пишем
+                    }
                 }
 
                 string jsonData = JsonSerializer.Serialize(jsonList);
@@ -111,6 +140,22 @@ namespace OPCWebServer
                 {
                     _lastJsonData = jsonData;
                     _lastBinaryData = binaryData;
+                }
+
+                // Отправка в UDP
+                if (binaryList.Count > 0 && _udpEnabled && _udpService != null)
+                {
+                    _udpService.Send(binaryList);
+                }
+
+                // Запись в БД (пакетная)
+                if (tagsForArchive.Count > 0 && _dbService != null)
+                {
+                    long timestamp = DateTimeOffset.Now.ToUnixTimeSeconds();
+                    foreach (var item in tagsForArchive)
+                    {
+                        _dbService.EnqueueRecord(timestamp, item.Index, item.Value);
+                    }
                 }
 
                 DataUpdated?.Invoke();
@@ -145,6 +190,46 @@ namespace OPCWebServer
             catch 
             {
                 return 0f; 
+            }
+        }
+
+        public object GetCurrentValue(int tagIndex)
+        {
+            lock (_lock)
+            {
+                if (string.IsNullOrEmpty(_lastJsonData) || _lastJsonData == "[]")
+                    return null;
+
+                try
+                {
+                    var jsonList = JsonSerializer.Deserialize<List<JsonElement>>(_lastJsonData);
+                    if (jsonList == null || tagIndex >= jsonList.Count)
+                        return null;
+
+                    var item = jsonList[tagIndex];
+                    if (item.TryGetProperty("v", out var valueProp))
+                    {
+                        switch (valueProp.ValueKind)
+                        {
+                            case JsonValueKind.Number:
+                                return valueProp.GetDouble();
+                            case JsonValueKind.True:
+                                return true;
+                            case JsonValueKind.False:
+                                return false;
+                            case JsonValueKind.String:
+                                return valueProp.GetString();
+                            default:
+                                return null;
+                        }
+                    }
+                }
+                catch
+                {
+                    // Ignore parsing errors
+                }
+                
+                return null;
             }
         }
     }

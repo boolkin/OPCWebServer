@@ -7,6 +7,7 @@ namespace OPCWebServer
         public OpcSettings OpcSettings { get; set; } = new OpcSettings();
         public WebSettings WebSettings { get; set; } = new WebSettings();
         public UdpSettings UdpSettings { get; set; } = new UdpSettings();
+        public DatabaseSettings DatabaseSettings { get; set; } = new DatabaseSettings();
         public List<TagConfig> Tags { get; set; } = new List<TagConfig>();
     }
 
@@ -31,6 +32,13 @@ namespace OPCWebServer
         public int RemotePort { get; set; } = 3310;
     }
 
+    public class DatabaseSettings
+    {
+        public bool Enabled { get; set; } = false;
+        public string DbPath { get; set; } = "data/archive.db";
+        public int RetentionDays { get; set; } = 30;
+    }
+
     public class TagConfig
     {
         public int Id { get; set; }
@@ -40,6 +48,7 @@ namespace OPCWebServer
         public double Offset { get; set; }
         public bool Invert { get; set; }
         public bool UdpSend { get; set; }
+        public bool Archive { get; set; }
     }
 
     public class TagViewItem
@@ -49,6 +58,7 @@ namespace OPCWebServer
         public string DataType { get; set; } = "float";
         public bool Invert { get; set; } = false;
         public bool UdpSend { get; set; } = false;
+        public bool Archive { get; set; } = false;
     }
 
 }
